@@ -1,0 +1,152 @@
+Linux kernel
+============
+
+There are several guides for kernel developers and users. These guides can
+be rendered in a number of formats, like HTML and PDF. Please read
+Documentation/admin-guide/README.rst first.
+
+In order to build the documentation, use ``make htmldocs`` or
+``make pdfdocs``.  The formatted documentation can also be read online at:
+
+    https://www.kernel.org/doc/html/latest/
+
+There are various text files in the Documentation/ subdirectory,
+several of them using the Restructured Text markup notation.
+
+Please read the Documentation/process/changes.rst file, as it contains the
+requirements for building and running the kernel, and information about
+the problems which may result by upgrading your kernel.
+
+
+====================
+KERNEL MODIFICATIONS
+====================
+
+There are two versions of the queue at the moment, there is a userspace queue  
+and a Kernelspace queue. The Userspace Queue, is stored in the /prototypes/  
+file, and the kernel space queue is stored in the/[NULL]/ directory.  
+
+The user space consists of 4 files. Two of these files compromise a header  
+for the creation of a queue through the use of a linked list, and the other  
+contains the code for the Binary search tree.
+
+===============
+USERSPACE FILES
+===============
+PQueue_Tree.c  
+This is the main file containing the functions I was tasked with creating for  
+project 2. This file does not contain all of the functions required for
+managing the queue data structure, and instead those functions are included  
+from the LinkedQueue.h header, which was created by me in the same directory.  
+This function also contains two helper functions to assist the tree in making
+recursive operations.
+This file also contains several test cases, and is how I am testing my code  
+before moving it over to kernelspace.
+
+LinkedQueue.h
+This is the header file, and function definition for all of the queue  
+functions. This is a very small file, but may ultimately be merged into the  
+kernel space implementation of this project.
+
+LinkedQueue.c
+This is the code associated with the header file LinkedQueue.h, this file  
+contains all of the code required to handle the Queue operations, such as  
+an enqueue, dequeue, and purge function. This file also contains information
+about the struct used as a linked list node.
+
+MAKEFILE
+This is a very simple makefile, that compiles LinkedQueue.c and tells the  
+the file PQueue_Tree.c to use it as a header when it is compiled.
+
+
+
+=================
+KERNELSPACE FILES
+=================
+
+project2calls.c
+This is the file that contains all of my syscalls, and for the sake of simplicity
+this file also contains the functions formerly stored in LinkedQueue.h. This means
+that I do not have to worry about managing header files.
+
+The kernelspace of my data structure consists of the following:
+
+long pqueue_init(void): (#548)
+	An intialization function for my Binary Search tree, this creates the head node,
+	and is called from create if there is no head when create is called.
+	
+long pqueue_shutdown(void): (#549)
+	This function handles shutting down the data structure, and deleting all allocated
+	memory. This will also delete, and deallocate all queues attached to the tree. This
+	process is handled recursively.
+	
+long pqueue_create(unsigned long priority): (#550)
+	This function creates a new pqueue with a priority passed to it. This function first
+	must check that no node already exists with the same priority.
+	
+long pqueue_destroy(unsigned long priority): (#551)
+	This function will remove, and deallocate any pqueue at a specified priority. The node
+	attached to the destroyed pqueue will remain in place even after the destruction of the
+	queue. (the queue is set equal to NULL)
+	
+long pqueue_count(unsigned long priority): (#552)
+	This function tallys, and then reports the number of process IDs present within the nodes
+	as specified by the priority passed to the function. This function will then return the
+	value.
+	
+long pqueue_send(unsigned long priority, unsigned long PID): (#553)
+	This function sends the value stored in PID to the queue in the node specified by priority.
+	This value is enqueued, and can be accessed again later.
+	
+long pqueue_recv(unsigned long priority):
+	This function reads the Process ID from the top of the Queue, and returns it from the
+	system call. In the event that there is no queue present, an error code is returned
+	instead.
+	
+LOCKING MECHANISM:
+	The data structure is controled by a locking mechanism, as the project outline dictates.
+	For my locking mechanism, I chose a simple mutex, with edit/read lockes placed on each
+	individual node. When a node is locked, it cannot (and will not) be edited, or read from.
+	The final action every function should take before resolving is to set the mutex value
+	appropriately.
+
+
+
+=================
+TEST DRIVER FILES
+=================
+
+syscalltest.c
+This is a testing driver for the syscalls contained in the file project2calls.c. This
+program will be used to test the syscalls, and ensure that they are running without
+any issues. The result of the test will be printed to the command line with printf().
+
+Makefile
+This is the makefile for the syscalltest.c file, it is used to compile the syscalltest.c
+file, and is a very simple, and generic makefile.
+make using the make command, and run the file by typing "./systest"
+
+
+
+============
+SOURCES USED
+============
+
+https://www.geeksforgeeks.org/binary-search-tree-set-1-search-and-insertion/  
+This is a binary search tree tutorial from geeks for geeks, I used it mainly  
+as a reminder of what I needed to include in a binary search tree, and to  
+refresh myself on the C syntax for structs.
+
+
+https://www.geeksforgeeks.org/what-is-linked-list/  
+Similarly to above, this geeks for geeks tutorial was used to help me refresh  
+on the linked list data structure, and to help remind me about how a struct  
+works in c.  
+
+
+https://www.includehelp.com/c-programming-questions/what-is-makefile.aspx
+I used this tutorial to help me create a makefile for my userspace program  
+and to help me use the header file that I created for my linked list.
+
+
+

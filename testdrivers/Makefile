@@ -1,0 +1,1 @@
+gcc syscalltest.c -o systest
